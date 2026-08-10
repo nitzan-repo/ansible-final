@@ -1,0 +1,9 @@
+---
+- name: Update server hostname
+  ansible.builtin.hostname:
+    name: "{{ tags.Name }}"
+  when:
+    - tags is defined
+    - tags.Owner is defined
+    - tags.Owner == "Nitzan Nathan"
+    - tags.Name is defined

@@ -1,0 +1,38 @@
+---
+- name: Find the correct package name dynamically for Ubuntu
+  ansible.builtin.shell: |
+    pkg="{{ tags.Service }}"
+    if apt-cache search --names-only "^${pkg}$" | grep -q "^${pkg} "; then
+      echo "${pkg}"
+    elif apt-cache search --names-only "^${pkg}-server$" | grep -q "^${pkg}-server "; then
+      echo "${pkg}-server"
+    else
+      apt-cache pkgnames "${pkg}" | head -n 1
+    fi
+  register: detected_package
+  changed_when: false
+  when:
+    - tags is defined
+    - tags.Owner is defined
+    - tags.Owner == "Nitzan Nathan"
+    - tags.Service is defined
+
+- name: Set target package variable
+  set_fact:
+    final_package: "{{ detected_package.stdout | trim }}"
+  when:
+    - tags is defined
+    - tags.Service is defined
+    - detected_package.stdout is defined
+
+- name: Install service with specific version or latest
+  ansible.builtin.apt:
+    name: "{{ final_package }}"
+    state: "{{ 'present' if (tags.Version is defined and tags.Version | string | length > 0) else 'latest' }}"
+    update_cache: yes
+  when:
+    - tags is defined
+    - tags.Owner is defined
+    - tags.Owner == "Nitzan Nathan"
+    - tags.Service is defined
+    - final_package | length > 0

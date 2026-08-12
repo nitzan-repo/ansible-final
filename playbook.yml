@@ -1,21 +1,15 @@
 ---
-- name: Install and configure web server
-  hosts: webservers
+- name: Configure servers based on AWS tags
+  hosts: all:!ec2-44-222-173-228.compute-1.amazonaws.com
+  gather_facts: true
   become: true
+
   tasks:
-    - name: Install Apache2 on Ubuntu
-      ansible.builtin.apt:
-        name: apache2
-        state: latest
-        update_cache: yes
+    - name: Run hostname configuration
+      include_tasks: tasks/hostname.yml
 
-    - name: Start and enable Apache2
-      ansible.builtin.service:
-        name: apache2
-        state: started
-        enabled: true
+    - name: Run package installation
+      include_tasks: tasks/install_service.yml
 
-    - name: Create index.html with my name
-      ansible.builtin.copy:
-        content: "Nitzan Nathan\n"
-        dest: /var/www/html/index.html
+    - name: Run restart schedule configuration
+      include_tasks: tasks/restart_cron.yml
